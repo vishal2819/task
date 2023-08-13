@@ -1,12 +1,37 @@
+
+// Import required modules
 const express = require('express');
 const mongoose = require('mongoose');
 
-// Connect to the MongoDB database
-mongoose.connect('mongodb://localhost:27017/my_database', {
+// Create an Express app
+const app = express();
+app.use(express.json());
+
+// MongoDB connection URI
+const dbURI = 'mongodb://127.0.0.1:27017/formDetails'; // Replace with your actual connection string
+
+// Options to pass to the mongoose.connect() function
+const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+};
 
+// Connect to MongoDB with proper error handling
+mongoose.connect(dbURI, options)
+  .then(() => {
+    console.log('Connected to MongoDB');
+
+    // Start the server after successfully connecting to the database
+    const port = 3000;
+    app.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
+  });
+
+// Define the schema and model for personal data
 const personalSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   email: { type: String, required: true },
@@ -15,6 +40,7 @@ const personalSchema = new mongoose.Schema({
 
 const PersonalModel = mongoose.model('Personal', personalSchema);
 
+// Define the schema and model for official data
 const officialSchema = new mongoose.Schema({
   years: { type: Number, required: true },
   company: { type: String, required: true },
@@ -23,9 +49,6 @@ const officialSchema = new mongoose.Schema({
 });
 
 const OfficialModel = mongoose.model('Official', officialSchema);
-
-const app = express();
-app.use(express.json());
 
 // POST endpoint to handle form input for personalSchema
 app.post('/api/personal', async (req, res) => {
@@ -37,7 +60,6 @@ app.post('/api/personal', async (req, res) => {
     const personalData = new PersonalModel({ firstName, email, mobile });
     const validationResult = personalData.validateSync();
     if (validationResult) {
-      // If validation fails, respond with a 400 Bad Request status code and error messages
       return res.status(400).json({ error: validationResult.errors });
     }
 
@@ -47,7 +69,6 @@ app.post('/api/personal', async (req, res) => {
     // Respond with the saved data
     res.status(201).json(savedData);
   } catch (error) {
-    // If any other error occurs, respond with a 500 Internal Server Error status code
     res.status(500).json({ error: 'Something went wrong!' });
   }
 });
@@ -81,13 +102,6 @@ app.post('/api/official', async (req, res) => {
     // Respond with the saved experiences
     res.status(201).json(savedExperiences);
   } catch (error) {
-    // If any other error occurs, respond with a 500 Internal Server Error status code
     res.status(500).json({ error: 'Something went wrong!' });
   }
-});
-
-// Start the server
-const port = 3000;
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
 });
